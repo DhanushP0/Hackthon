@@ -1,0 +1,57 @@
+[
+  {
+    "user_id": "USR00000",
+    "label": "true_positive",
+    "timestamp": 1781417832
+  },
+  {
+    "user_id": "USR00209",
+    "label": "true_positive",
+    "timestamp": 1781417901
+  },
+  {
+    "user_id": "USR00125",
+    "label": "true_positive",
+    "timestamp": 1781418032
+  },
+  {
+    "user_id": "USR00044",
+    "label": "true_positive",
+    "timestamp": 1781418070
+  },
+  {
+    "user_id": "USR00044",
+    "label": "true_positive",
+    "timestamp": 1781418072
+  },
+  {
+    "user_id": "USR00044",
+    "label": "true_positive",
+    "timestamp": 1781418072
+  },
+  {
+    "user_id": "USR00044",
+    "label": "true_positive",
+    "timestamp": 1781418072
+  },
+  {
+    "user_id": "USR00044",
+    "label": "true_positive",
+    "timestamp": 1781418073
+  },
+  {
+    "user_id": "USR00044",
+    "label": "true_positive",
+    "timestamp": 1781418075
+  },
+  {
+    "user_id": "USR00209",
+    "label": "true_positive",
+    "timestamp": 1781418252
+  },
+  {
+    "user_id": "USR00209",
+    "label": "true_positive",
+    "timestamp": 1781418263
+  }
+]

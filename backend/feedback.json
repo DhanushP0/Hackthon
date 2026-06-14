@@ -58,5 +58,15 @@
     "user_id": "USR00035",
     "label": "true_positive",
     "timestamp": 1781427133
+  },
+  {
+    "user_id": "USR00035",
+    "label": "true_positive",
+    "timestamp": 1781433223
+  },
+  {
+    "user_id": "USR00035",
+    "label": "false_positive",
+    "timestamp": 1781433224
   }
 ]

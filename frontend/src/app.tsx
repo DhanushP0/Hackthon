@@ -55,6 +55,7 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'none'>('desc');
   const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({});
   const [showAllUsers, setShowAllUsers] = useState<boolean>(false);
+  const [graphVersion, setGraphVersion] = useState(Date.now());
 
   // Interactive full-screen view state for NetworkX visualization
   const [isGraphExpanded, setIsGraphExpanded] = useState<boolean>(false);
@@ -110,6 +111,26 @@ export default function App() {
       setBonusInsights(bonusResponse.data);
     } catch {
       console.warn('Feedback loop is unavailable while operating on fallback data.');
+    }
+  };
+  const refreshData = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/refresh`
+      );
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        await loadAlerts();
+
+        // Force graph reload
+        setGraphVersion(Date.now());
+
+        console.log("Pipeline refreshed");
+      }
+    } catch (error) {
+      console.error("Refresh failed:", error);
     }
   };
 
@@ -403,6 +424,53 @@ export default function App() {
                           Score {selectedAccount.risk_score}/100
                         </span>
                       </div>
+                      {/* Confidence Score */}
+                      <div className="bg-[#FDFBF7] border border-[#EAE3D2] rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <ShieldAlert size={14} className="text-[#4F46E5]" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267]">
+                              Detection Confidence
+                            </span>
+                          </div>
+
+                          <span
+                            className={`font-bold text-xs ${selectedAccount.confidence >= 0.8
+                              ? "text-green-600"
+                              : selectedAccount.confidence >= 0.6
+                                ? "text-yellow-600"
+                                : "text-red-600"
+                              }`}
+                          >
+                            {(selectedAccount.confidence * 100).toFixed(0)}%
+                          </span>
+                        </div>
+
+                        <div className="w-full h-2 bg-[#EAE3D2] rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 ${selectedAccount.confidence >= 0.8
+                              ? "bg-green-500"
+                              : selectedAccount.confidence >= 0.6
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                              }`}
+                            style={{
+                              width: `${selectedAccount.confidence * 100}%`
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex justify-between mt-2 text-[10px] text-[#7C7267]">
+                          <span>Low Confidence</span>
+                          <span>High Confidence</span>
+                        </div>
+
+                        <p className="mt-2 text-[10px] text-[#7C7267] leading-relaxed">
+                          Confidence is calculated from inactivity patterns, privilege exposure,
+                          anomaly correlation, failed logins, sensitive resource access and
+                          behavioral indicators.
+                        </p>
+                      </div>
 
                       <div className="p-4 space-y-4 overflow-y-auto">
                         {/* Target metadata */}
@@ -544,9 +612,9 @@ export default function App() {
                           className="relative group cursor-zoom-in overflow-hidden rounded-xl border border-[#EAE3D2] shadow-sm bg-[#FDFBF7]"
                         >
                           <img
-                            src={`${API_BASE_URL}/api/graph`}
+                            src={`${API_BASE_URL}/api/graph?v=${graphVersion}`}
                             alt="Identity Risk Graph"
-                            className="w-full h-auto object-cover rounded-xl transition duration-200 group-hover:brightness-95"
+                            className="w-full rounded-xl"
                           />
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/5 transition duration-200">
                             <span className="bg-white/90 backdrop-blur-sm border border-[#EAE3D2] text-[10px] font-bold text-[#7C7267] px-2.5 py-1.5 rounded-lg shadow-sm">
@@ -975,10 +1043,10 @@ export default function App() {
           {/* Maximized structural layout image frame context */}
           <div className="relative max-w-5xl max-h-[85vh] w-full h-full flex items-center justify-center bg-white border border-[#EAE3D2] rounded-2xl shadow-2xl p-4">
             <img
-              src={`${API_BASE_URL}/api/graph`}
+              src={`${API_BASE_URL}/api/graph?v=${graphVersion}`}
               alt="Identity Risk Graph Maximize"
               className="max-w-full max-h-full object-contain rounded-xl"
-              onClick={(e) => e.stopPropagation()} // Click guard protection
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
 
@@ -991,3 +1059,7 @@ export default function App() {
     </div>
   );
 }
+function loadAlerts() {
+  throw new Error('Function not implemented.');
+}
+

@@ -1,6 +1,6 @@
-import pandas as pd
-import json
 import ast
+import json
+import pandas as pd
 
 # =====================================
 # LOAD DATA
@@ -13,20 +13,19 @@ print(f"Loaded {len(users)} scored users")
 print(f"Loaded {len(events)} anomalies")
 
 # =====================================
-# EVENT AGGREGATION
+# EVENT AGGREGATION & FINDINGS PARSING
 # =====================================
 
-event_summary = events.groupby("user_id").agg(
-    total_anomalies=("user_id", "count"),
-    event_risk_score=("rule_score", "sum")
-).reset_index()
-
-# =====================================
-# COLLECT UNIQUE FINDINGS
-# =====================================
+event_summary = (
+    events.groupby("user_id")
+    .agg(
+        total_anomalies=("user_id", "count"),
+        event_risk_score=("rule_score", "sum")
+    )
+    .reset_index()
+)
 
 findings_map = {}
-
 for _, row in events.iterrows():
     uid = row["user_id"]
     findings = row["findings"]
@@ -42,54 +41,53 @@ for _, row in events.iterrows():
                     findings_map[uid].add(item)
             else:
                 findings_map[uid].add(findings)
-        except:
+        except (ValueError, SyntaxError):
             findings_map[uid].add(findings)
 
 # =====================================
-# MERGE
+# MERGE & SCORE PIPELINE
 # =====================================
 
 alerts = users.merge(event_summary, on="user_id", how="left")
+alerts.fillna({"event_risk_score": 0, "total_anomalies": 0}, inplace=True)
 
-alerts.fillna(
-    {
-        "event_risk_score": 0, 
-        "total_anomalies": 0
-    }, 
-    inplace=True
+# Normalize event scores and compute the combined weighted matrix
+max_event = alerts["event_risk_score"].max()
+alerts["event_score_normalized"] = (
+    (alerts["event_risk_score"] / max_event) * 100 if max_event > 0 else 0
 )
 
+alerts["combined_score"] = (
+    alerts["risk_score"] * 0.6 +
+    alerts["event_score_normalized"] * 0.4
+).round(2)
+
+
 # =====================================
-# COMBINED SCORE
+# PRIORITY CALCULATION
 # =====================================
 
-alerts["combined_score"] = alerts["risk_score"] + alerts["event_risk_score"] * 0.25
-alerts["combined_score"] = alerts["combined_score"].round(2)
-
-# =====================================
-# PRIORITY
-# =====================================
-
-def priority(score):
-    if score >= 110:
+def calculate_priority_level(score):
+    if score >= 90:
         return "P1"
-    elif score >= 90:
+    elif score >= 75:
         return "P2"
-    elif score >= 60:
+    elif score >= 50:
         return "P3"
     return "P4"
 
-alerts["priority"] = alerts["combined_score"].apply(priority)
+
+# Assign priority levels directly to the DataFrame before JSON construction
+alerts["priority"] = alerts["combined_score"].apply(calculate_priority_level)
 
 # =====================================
-# BUILD JSON
+# BUILD JSON PAYLOAD
 # =====================================
 
 output = []
-
 for _, row in alerts.iterrows():
     uid = row["user_id"]
-
+    
     output.append({
         "user_id": uid,
         "username": row["username"],
@@ -105,25 +103,17 @@ for _, row in alerts.iterrows():
         "explanation": row.get("explanation", "")
     })
 
-# =====================================
-# SORT
-# =====================================
-
+# Sort structural array list by combined tracking matrix
 output = sorted(output, key=lambda x: x["combined_score"], reverse=True)
 
 # =====================================
-# SAVE JSON
+# SAVE & PREVIEW
 # =====================================
 
 with open("alerts.json", "w") as f:
     json.dump(output, f, indent=4)
 
-# =====================================
-# PREVIEW
-# =====================================
-
 print("\n========== TOP 10 ALERTS ==========\n")
-
 for alert in output[:10]:
     print(
         f"{alert['user_id']} | "

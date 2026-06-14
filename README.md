@@ -108,5 +108,3 @@ Anomalies are marked in `anomaly_marker` column. Use these to:
 5. **Document approach** - Explain your methodology
 
 ---
-
-**Questions?** See [PARTICIPANT_GUIDE.md](../../PARTICIPANT_GUIDE.md)
